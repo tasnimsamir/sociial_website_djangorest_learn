@@ -1,5 +1,5 @@
 from rest_framework import status
-from rest_framework.generics import CreateAPIView,RetrieveAPIView,ListAPIView,UpdateAPIView,ListCreateAPIView,DestroyAPIView
+from rest_framework.generics import CreateAPIView,RetrieveAPIView,ListAPIView,UpdateAPIView,ListCreateAPIView,DestroyAPIView,RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny,IsAdminUser
 from .serializers import FriendRequestSerializer, RegistrationSerializer,LoginSerializer,AccountSerializer
@@ -80,14 +80,6 @@ class UserLoginView(CreateAPIView):
             # status_code = status.HTTP_406_NOT_ACCEPTABLE
 
 
-# class Logout(APIView):
-#     def get(self, request, format=None):
-#         # simply delete the token to force a login
-#         request.user.auth_token.delete()
-#         print( request.user.auth_token.delete())
-#         return Response(status=status.HTTP_200_OK)
-
-
 class AccountList(ListAPIView):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
@@ -96,6 +88,26 @@ class AccountDetail(RetrieveAPIView):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
     lookup_field = 'id'
+
+
+class AcceptAccountView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAdminUser]
+    authentication_classes = (authentication.TokenAuthentication,)
+    serializer_class = AccountSerializer
+    lookup_field = 'id'
+    queryset = Account.objects.all()
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            # print('==================================',serializer.data)
+            return Response({"message": "message are updated successfully"})
+
+        else:
+            return Response({"message": "failed", "details": serializer.errors})
+
 
 
 class friendsListView(ListCreateAPIView):
